@@ -1,25 +1,20 @@
 import os
 import json
 import openai
-from flask import Flask, request, abort
+import random
+from flask import Flask, request, abort, jsonify
 from tarot import draw_tarot_cards
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
-# 初始化
+# 初始化 Flask & 金鑰
 app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
-# 🔮 API 占卜：用來 POST 測試用
-@app.route("/ask", methods=["POST"])
-def ask_tarot():
-    user_question = request.json.get("question", "")
-    return jsonify({"reply": generate_tarot_reply(user_question)})
-
-# 🧠 占卜邏輯封裝成一個函式
+# 🔮 占卜邏輯：GPT 解讀三張牌
 def generate_tarot_reply(user_question):
     cards = draw_tarot_cards(num=3)
     descriptions = [
@@ -40,7 +35,13 @@ def generate_tarot_reply(user_question):
 
     return response.choices[0].message['content']
 
-# ✅ LINE Webhook Endpoint
+# ✅ API 測試端點（可用 curl/postman 測試）
+@app.route("/ask", methods=["POST"])
+def ask_tarot():
+    user_question = request.json.get("question", "")
+    return jsonify({"reply": generate_tarot_reply(user_question)})
+
+# ✅ LINE webhook 端點
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
@@ -53,7 +54,7 @@ def callback():
 
     return 'OK'
 
-# 處理 LINE 的文字訊息事件
+# ✅ 處理 LINE 傳入訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_text = event.message.text
@@ -63,5 +64,6 @@ def handle_message(event):
         TextSendMessage(text=reply)
     )
 
+# ✅ 主程式入口（本地開發用）
 if __name__ == "__main__":
     app.run(debug=True)
