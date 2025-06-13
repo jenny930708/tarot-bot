@@ -60,6 +60,21 @@ def callback():
 def handle_message(event):
     text = event.message.text.lower()
 
+    # 初次問候、引導語
+    greetings = ["你好", "嗨", "hi", "hello", "在嗎", "安安", "哈囉"]
+    if any(greet in text for greet in greetings):
+        reply = "🎴 歡迎使用塔羅占卜師 AI！\n請輸入「抽卡」或「占卜」開始塔羅問答，也可以直接說「抽愛情」、「抽事業」來快速占卜哦！"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
+
+    # 自然語意引導（不是關鍵字但看起來像是想占卜）
+    trigger_words = ["最近", "壓力", "怎麼辦", "想問", "幫我看", "有困擾", "想占卜", "想抽"]
+    if any(word in text for word in trigger_words):
+        reply = "你是不是有想問的問題呢？請輸入「抽卡」開始，或直接輸入「抽愛情」、「抽事業」來占卜特定方向 🔮"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
+
+    # 抽卡選單觸發
     if "抽卡" in text or "占卜" in text:
         button_template = ButtonsTemplate(
             title="請選擇想要占卜的主題：",
@@ -75,12 +90,27 @@ def handle_message(event):
             template=button_template
         )
         line_bot_api.reply_message(event.reply_token, message)
+        return
+
+    # 直接輸入「抽愛情」等主題
+    if "抽愛情" in text:
+        topic = "愛情"
+    elif "抽事業" in text:
+        topic = "事業"
+    elif "抽健康" in text:
+        topic = "健康"
     else:
-        # 一般聊天
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="歡迎使用塔羅占卜師！請輸入「抽卡」或「占卜」來開始使用 😊")
-        )
+        topic = None
+
+    if topic:
+        reply = generate_tarot_reply(f"請幫我占卜{topic}方面的狀況", topic)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        return
+
+    # 其他一般訊息 fallback
+    reply = "您好 😊 若想要進行塔羅占卜，請輸入「抽卡」或「抽愛情 / 抽事業 / 抽健康」等主題來開始 🔮"
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+
 
 # 按鈕選單點擊後處理（Postback）
 @handler.add(PostbackEvent)
