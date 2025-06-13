@@ -6,11 +6,11 @@ from tarot import draw_tarot_cards
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from openai import OpenAI  # ✅ 新版 OpenAI SDK
+from openai import OpenAI  # ✅ 使用新版 OpenAI SDK
 
 # 初始化
 app = Flask(__name__)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # ✅ 使用新版初始化
+client = OpenAI()  # ✅ 正確用法：不帶參數，從環境變數讀取
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
