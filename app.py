@@ -1,23 +1,24 @@
 import os
 import json
 import random
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort
 from tarot import draw_tarot_cards
 from openai import OpenAI
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
-    TemplateSendMessage, ButtonsTemplate, PostbackAction, PostbackEvent
+    TemplateSendMessage, ButtonsTemplate, PostbackAction, PostbackEvent,
+    FlexSendMessage, ImageSendMessage, URIAction
 )
 
-# 初始化
 app = Flask(__name__)
 client = OpenAI()
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
+user_states = {}  # 儲存使用者狀態
 
-# GPT 塔羅解讀邏輯
+# 產生塔羅解讀文字
 def generate_tarot_reply(user_question, topic="一般"):
     cards = draw_tarot_cards(num=3)
     descriptions = [
@@ -35,16 +36,9 @@ def generate_tarot_reply(user_question, topic="一般"):
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content, cards[0]['image_url'] if 'image_url' in cards[0] else None
 
-# 抽牌 API（給 curl / Postman 測試用）
-@app.route("/ask", methods=["POST"])
-def ask_tarot():
-    user_question = request.json.get("question", "")
-    topic = request.json.get("topic", "一般")
-    return jsonify({"reply": generate_tarot_reply(user_question, topic)})
-
-# LINE webhook
+# Webhook 設定
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
@@ -55,68 +49,89 @@ def callback():
         abort(400)
     return 'OK'
 
-# 文字訊息處理：觸發按鈕選單或回覆提示
+# Flex Bubble 主題選單
+def send_flex_menu(event):
+    flex_content = {
+        "type": "bubble",
+        "hero": {
+            "type": "image",
+            "url": "https://i.imgur.com/7KJ1tVj.jpg",
+            "size": "full",
+            "aspectRatio": "20:13",
+            "aspectMode": "cover"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": "選擇塔羅占卜主題", "weight": "bold", "size": "lg"},
+                {"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": [
+                    {"type": "button", "action": {"type": "postback", "label": "\ud83d\udc98 \u611b\u60c5", "data": "topic=愛情"}, "style": "primary"},
+                    {"type": "button", "action": {"type": "postback", "label": "\ud83d\udcbc \u4e8b\u696d", "data": "topic=事業"}, "style": "primary"},
+                    {"type": "button", "action": {"type": "postback", "label": "\u2764\ufe0f\u200d\ud83e\ude79 \u5065\u5eb7", "data": "topic=健康"}, "style": "primary"}
+                ]}
+            ]
+        }
+    }
+    line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="請選擇塔羅占卜主題", contents=flex_content))
+
+# 文字訊息事件處理
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    user_id = event.source.user_id
     text = event.message.text.lower()
 
-    # 初次問候、引導語
-    greetings = ["你好", "嗨", "hi", "hello", "在嗎", "安安", "哈囉"]
-    if any(greet in text for greet in greetings):
-        reply = "🎴 歡迎使用塔羅占卜師 AI！\n請輸入「抽卡」或「占卜」開始塔羅問答，也可以直接說「抽愛情」、「抽事業」來快速占卜哦！"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+    # 如果使用者之前選過主題，現在輸入的是問題內容
+    if user_id in user_states and "topic" in user_states[user_id]:
+        topic = user_states[user_id].pop("topic")
+        user_question = event.message.text
+        reply_text, image_url = generate_tarot_reply(user_question, topic)
+        messages = [TextSendMessage(text=reply_text)]
+        if image_url:
+            messages.insert(0, ImageSendMessage(
+                original_content_url=image_url,
+                preview_image_url=image_url
+            ))
+        messages.append(TemplateSendMessage(
+            alt_text="分享占卜結果",
+            template=ButtonsTemplate(
+                text="想跟朋友分享這次占卜結果嗎？",
+                actions=[
+                    URIAction(label="\ud83d\udd17 點我分享", uri="https://line.me")
+                ]
+            )
+        ))
+        line_bot_api.reply_message(event.reply_token, messages)
         return
 
-    # 自然語意引導（不是關鍵字但看起來像是想占卜）
-    trigger_words = ["最近", "壓力", "怎麼辦", "想問", "幫我看", "有困擾", "想占卜", "想抽"]
-    if any(word in text for word in trigger_words):
-        reply = "你是不是有想問的問題呢？請輸入「抽卡」開始，或直接輸入「抽愛情」、「抽事業」來占卜特定方向 🔮"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+    # 啟動畫面輸入
+    if any(word in text for word in ["抽卡", "占卜"]):
+        send_flex_menu(event)
         return
 
-    # 抽卡選單觸發
-    if "抽卡" in text or "占卜" in text:
-        button_template = ButtonsTemplate(
-            title="請選擇想要占卜的主題：",
-            text="點選下方主題即可開始占卜 🔮",
-            actions=[
-                PostbackAction(label="愛情", data="topic=愛情"),
-                PostbackAction(label="事業", data="topic=事業"),
-                PostbackAction(label="健康", data="topic=健康")
-            ]
+    # 問候引導
+    if text in ["你好", "嗨", "hi", "hello", "在嗎"]:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="\ud83c\udf34 歡迎來到塔羅占卜 AI！輸入「抽卡」或「占卜」來開始抽牌喔～")
         )
-        message = TemplateSendMessage(
-            alt_text="請選擇占卜主題：愛情 / 事業 / 健康",
-            template=button_template
-        )
-        line_bot_api.reply_message(event.reply_token, message)
         return
 
-    # 直接輸入「抽愛情」等主題
-    if "抽愛情" in text:
-        topic = "愛情"
-    elif "抽事業" in text:
-        topic = "事業"
-    elif "抽健康" in text:
-        topic = "健康"
-    else:
-        topic = None
+    # 其他訊息 fallback
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text="您好～請輸入「抽卡」、「抽愛情」、「抽事業」來開始塔羅占卜喔！")
+    )
 
-    if topic:
-        reply = generate_tarot_reply(f"請幫我占卜{topic}方面的狀況", topic)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-        return
-
-    # 其他一般訊息 fallback
-    reply = "您好 😊 若想要進行塔羅占卜，請輸入「抽卡」或「抽愛情 / 抽事業 / 抽健康」等主題來開始 🔮"
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
-
-
-# 按鈕選單點擊後處理（Postback）
+# Flex 選單點擊後處理
 @handler.add(PostbackEvent)
 def handle_postback(event):
+    user_id = event.source.user_id
     data = event.postback.data
     if data.startswith("topic="):
         topic = data.replace("topic=", "")
-        reply = generate_tarot_reply(f"請幫我占卜{topic}方面的狀況", topic)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+        user_states[user_id] = {"topic": topic}
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"請問你想針對「{topic}」方面問什麼問題呢？")
+        )
