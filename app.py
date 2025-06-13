@@ -55,7 +55,7 @@ def send_flex_menu(event):
         "type": "bubble",
         "hero": {
             "type": "image",
-            "url": "https://i.imgur.com/7KJ1tVj.jpg",
+            "url": "https://i.imgur.com/YvNURkP.png",  # ✅ 替換為黑金星座主題圖
             "size": "full",
             "aspectRatio": "20:13",
             "aspectMode": "cover"
@@ -66,9 +66,9 @@ def send_flex_menu(event):
             "contents": [
                 {"type": "text", "text": "選擇塔羅占卜主題", "weight": "bold", "size": "lg"},
                 {"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": [
-                    {"type": "button", "action": {"type": "postback", "label": "\ud83d\udc98 \u611b\u60c5", "data": "topic=愛情"}, "style": "primary"},
-                    {"type": "button", "action": {"type": "postback", "label": "\ud83d\udcbc \u4e8b\u696d", "data": "topic=事業"}, "style": "primary"},
-                    {"type": "button", "action": {"type": "postback", "label": "\u2764\ufe0f\u200d\ud83e\ude79 \u5065\u5eb7", "data": "topic=健康"}, "style": "primary"}
+                    {"type": "button", "action": {"type": "postback", "label": "💘 愛情", "data": "topic=愛情"}, "style": "primary"},
+                    {"type": "button", "action": {"type": "postback", "label": "💼 事業", "data": "topic=事業"}, "style": "primary"},
+                    {"type": "button", "action": {"type": "postback", "label": "❤️‍🩹 健康", "data": "topic=健康"}, "style": "primary"}
                 ]}
             ]
         }
