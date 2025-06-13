@@ -53,13 +53,13 @@ def callback():
 def send_flex_menu(event):
     flex_content = {
         "type": "bubble",
-        "hero": {
-            "type": "image",
-            "url": "https://i.imgur.com/YvNURkP.png",  # ✅ 替換為黑金星座主題圖
-            "size": "full",
-            "aspectRatio": "20:13",
-            "aspectMode": "cover"
-        },
+       "hero": {
+  "type": "image",
+  "url": "https://i.imgur.com/Xyoeml7.png",  # ✅ 新黑金星座風格圖
+  "size": "full",
+  "aspectRatio": "20:13",
+  "aspectMode": "cover"
+}
         "body": {
             "type": "box",
             "layout": "vertical",
