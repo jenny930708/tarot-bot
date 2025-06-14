@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import time
 from flask import Flask, request, abort
 from tarot import draw_tarot_cards
 from openai import OpenAI
@@ -49,7 +50,7 @@ def callback():
         abort(400)
     return 'OK'
 
-# Flex Bubble 主題選單
+# Flex Bubble 主題選單（無 hero）
 def send_flex_menu(event):
     flex_content = {
         "type": "bubble",
@@ -75,7 +76,7 @@ def send_flex_menu(event):
                             "type": "button",
                             "action": {
                                 "type": "postback",
-                                "label": "💘 愛情",
+                                "label": "\ud83d\udc98 愛情",
                                 "data": "topic=愛情"
                             },
                             "style": "primary"
@@ -84,7 +85,7 @@ def send_flex_menu(event):
                             "type": "button",
                             "action": {
                                 "type": "postback",
-                                "label": "💼 事業",
+                                "label": "\ud83d\udcbc 事業",
                                 "data": "topic=事業"
                             },
                             "style": "primary"
@@ -93,7 +94,7 @@ def send_flex_menu(event):
                             "type": "button",
                             "action": {
                                 "type": "postback",
-                                "label": "❤️‍🩹 健康",
+                                "label": "\u2764\ufe0f\u200d\ud83e\ude79 健康",
                                 "data": "topic=健康"
                             },
                             "style": "primary"
@@ -119,6 +120,32 @@ def handle_message(event):
     if user_id in user_states and "topic" in user_states[user_id]:
         topic = user_states[user_id].pop("topic")
         user_question = event.message.text
+
+        # 模擬動畫過程
+        line_bot_api.reply_message(event.reply_token, [
+            TextSendMessage(text="🔮 占卜師正在洗牌中..."),
+            FlexSendMessage(
+                alt_text="洗牌中動畫...",
+                contents={
+                    "type": "bubble",
+                    "hero": {
+                        "type": "image",
+                        "url": "https://i.imgur.com/QmPMgC7.gif",
+                        "size": "full",
+                        "aspectMode": "cover"
+                    },
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": "占卜師正在抽出三張牌...", "weight": "bold", "align": "center"}
+                        ]
+                    }
+                }
+            )
+        ])
+
+        # 傳送最終解讀（延遲會自動處理於下一輪 push）
         reply_text, image_url = generate_tarot_reply(user_question, topic)
         messages = [TextSendMessage(text=reply_text)]
         if image_url:
@@ -135,7 +162,7 @@ def handle_message(event):
                 ]
             )
         ))
-        line_bot_api.reply_message(event.reply_token, messages)
+        line_bot_api.push_message(user_id, messages)
         return
 
     # 啟動畫面輸入
