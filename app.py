@@ -53,28 +53,67 @@ def callback():
 def send_flex_menu(event):
     flex_content = {
         "type": "bubble",
-       "hero": {
-  "type": "image",
-  "url": "https://i.imgur.com/Xyoeml7.png",  # ✅ 新黑金星座風格圖
-  "size": "full",
-  "aspectRatio": "20:13",
-  "aspectMode": "cover"
-}
-
+        "hero": {
+            "type": "image",
+            "url": "https://i.imgur.com/Xyoeml7.png",  # 黑金星座圖
+            "size": "full",
+            "aspectRatio": "20:13",
+            "aspectMode": "cover"
+        },
         "body": {
             "type": "box",
             "layout": "vertical",
             "contents": [
-                {"type": "text", "text": "選擇塔羅占卜主題", "weight": "bold", "size": "lg"},
-                {"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": [
-                    {"type": "button", "action": {"type": "postback", "label": "💘 愛情", "data": "topic=愛情"}, "style": "primary"},
-                    {"type": "button", "action": {"type": "postback", "label": "💼 事業", "data": "topic=事業"}, "style": "primary"},
-                    {"type": "button", "action": {"type": "postback", "label": "❤️‍🩹 健康", "data": "topic=健康"}, "style": "primary"}
-                ]}
+                {
+                    "type": "text",
+                    "text": "選擇塔羅占卜主題",
+                    "weight": "bold",
+                    "size": "lg"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "lg",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "💘 愛情",
+                                "data": "topic=愛情"
+                            },
+                            "style": "primary"
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "💼 事業",
+                                "data": "topic=事業"
+                            },
+                            "style": "primary"
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "❤️‍🩹 健康",
+                                "data": "topic=健康"
+                            },
+                            "style": "primary"
+                        }
+                    ]
+                }
             ]
         }
     }
-    line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="請選擇塔羅占卜主題", contents=flex_content))
+
+    line_bot_api.reply_message(
+        event.reply_token,
+        FlexSendMessage(alt_text="請選擇塔羅占卜主題", contents=flex_content)
+    )
+
 
 # 文字訊息事件處理
 @handler.add(MessageEvent, message=TextMessage)
