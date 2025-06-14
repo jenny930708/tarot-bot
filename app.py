@@ -37,7 +37,7 @@ def generate_tarot_reply(user_question, topic="一般"):
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content, cards[0]['image_url'] if 'image_url' in cards[0] else None
+    return response.choices[0].message.content, cards[0].get('image_url')
 
 # Webhook 設定
 @app.route("/callback", methods=['POST'])
@@ -76,7 +76,7 @@ def send_flex_menu(event):
                             "type": "button",
                             "action": {
                                 "type": "postback",
-                                "label": "\ud83d\udc98 愛情",
+                                "label": "💘 愛情",
                                 "data": "topic=愛情"
                             },
                             "style": "primary"
@@ -85,7 +85,7 @@ def send_flex_menu(event):
                             "type": "button",
                             "action": {
                                 "type": "postback",
-                                "label": "\ud83d\udcbc 事業",
+                                "label": "💼 事業",
                                 "data": "topic=事業"
                             },
                             "style": "primary"
@@ -94,7 +94,7 @@ def send_flex_menu(event):
                             "type": "button",
                             "action": {
                                 "type": "postback",
-                                "label": "\u2764\ufe0f\u200d\ud83e\ude79 健康",
+                                "label": "❤️‍🩹 健康",
                                 "data": "topic=健康"
                             },
                             "style": "primary"
@@ -125,32 +125,32 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, [
             TextSendMessage(text="🔮 占卜師正在洗牌中..."),
             FlexSendMessage(
-    alt_text="洗牌中動畫...",
-    contents={
-        "type": "bubble",
-        "hero": {
-            "type": "image",
-            "url": "https://i.imgur.com/wm9BfFC.gif",  # ✅ 有效圖
-            "size": "full",
-            "aspectMode": "cover"
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "占卜師正在抽出三張牌...",
-                    "weight": "bold",
-                    "align": "center"
+                alt_text="洗牌中動畫...",
+                contents={
+                    "type": "bubble",
+                    "hero": {
+                        "type": "image",
+                        "url": "https://i.imgur.com/wm9BfFC.gif",
+                        "size": "full",
+                        "aspectMode": "cover"
+                    },
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "占卜師正在抽出三張牌...",
+                                "weight": "bold",
+                                "align": "center"
+                            }
+                        ]
+                    }
                 }
-            ]
-        }
-    }
-)
+            )
         ])
 
-        # 傳送最終解讀（延遲會自動處理於下一輪 push）
+        # 傳送最終解讀（用 push message）
         reply_text, image_url = generate_tarot_reply(user_question, topic)
         messages = [TextSendMessage(text=reply_text)]
         if image_url:
@@ -163,7 +163,7 @@ def handle_message(event):
             template=ButtonsTemplate(
                 text="想跟朋友分享這次占卜結果嗎？",
                 actions=[
-                    URIAction(label="\ud83d\udd17 點我分享", uri="https://line.me")
+                    URIAction(label="🔗 點我分享", uri="https://line.me")
                 ]
             )
         ))
@@ -179,7 +179,7 @@ def handle_message(event):
     if text in ["你好", "嗨", "hi", "hello", "在嗎"]:
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="\ud83c\udf34 歡迎來到塔羅占卜 AI！輸入「抽卡」或「占卜」來開始抽牌喔～")
+            TextSendMessage(text="🌴 歡迎來到塔羅占卜 AI！輸入「抽卡」或「占卜」來開始抽牌喔～")
         )
         return
 
