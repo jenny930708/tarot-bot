@@ -53,14 +53,6 @@ def callback():
 def send_flex_menu(event):
     flex_content = {
         "type": "bubble",
-        "hero": {
-  "type": "image",
-  "url": "https://i.imgur.com/Xyoeml7.png",
-  "size": "full",
-  "aspectRatio": "20:13",
-  "aspectMode": "cover"
-}
-
         "body": {
             "type": "box",
             "layout": "vertical",
@@ -69,7 +61,9 @@ def send_flex_menu(event):
                     "type": "text",
                     "text": "選擇塔羅占卜主題",
                     "weight": "bold",
-                    "size": "lg"
+                    "size": "lg",
+                    "align": "center",
+                    "margin": "md"
                 },
                 {
                     "type": "box",
@@ -114,7 +108,6 @@ def send_flex_menu(event):
         event.reply_token,
         FlexSendMessage(alt_text="請選擇塔羅占卜主題", contents=flex_content)
     )
-
 
 # 文字訊息事件處理
 @handler.add(MessageEvent, message=TextMessage)
