@@ -130,7 +130,7 @@ def handle_message(event):
         "type": "bubble",
         "hero": {
             "type": "image",
-            "url": "https://i.imgur.com/VXgjk5e.gif",  # ✅ 有效的洗牌動畫圖
+            "url": "https://i.imgur.com/wm9BfFC.gif",  # ✅ 有效圖
             "size": "full",
             "aspectMode": "cover"
         },
