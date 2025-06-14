@@ -125,24 +125,29 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, [
             TextSendMessage(text="🔮 占卜師正在洗牌中..."),
             FlexSendMessage(
-                alt_text="洗牌中動畫...",
-                contents={
-                    "type": "bubble",
-                    "hero": {
-                        "type": "image",
-                        "url": "https://i.imgur.com/QmPMgC7.gif",
-                        "size": "full",
-                        "aspectMode": "cover"
-                    },
-                    "body": {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                            {"type": "text", "text": "占卜師正在抽出三張牌...", "weight": "bold", "align": "center"}
-                        ]
-                    }
+    alt_text="洗牌中動畫...",
+    contents={
+        "type": "bubble",
+        "hero": {
+            "type": "image",
+            "url": "https://i.imgur.com/VXgjk5e.gif",  # ✅ 有效的洗牌動畫圖
+            "size": "full",
+            "aspectMode": "cover"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "占卜師正在抽出三張牌...",
+                    "weight": "bold",
+                    "align": "center"
                 }
-            )
+            ]
+        }
+    }
+)
         ])
 
         # 傳送最終解讀（延遲會自動處理於下一輪 push）
