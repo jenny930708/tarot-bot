@@ -150,14 +150,16 @@ def handle_message(event):
             )
         ])
 
-        # 傳送最終解讀（用 push message）
+        time.sleep(2)  # 延遲讓動畫顯示
+
         reply_text, image_url = generate_tarot_reply(user_question, topic)
-        messages = [TextSendMessage(text=reply_text)]
+        messages = []
         if image_url:
-            messages.insert(0, ImageSendMessage(
+            messages.append(ImageSendMessage(
                 original_content_url=image_url,
                 preview_image_url=image_url
             ))
+        messages.append(TextSendMessage(text=reply_text))
         messages.append(TemplateSendMessage(
             alt_text="分享占卜結果",
             template=ButtonsTemplate(
