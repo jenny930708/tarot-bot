@@ -60,6 +60,7 @@ def send_flex_menu(event):
   "aspectRatio": "20:13",
   "aspectMode": "cover"
 }
+
         "body": {
             "type": "box",
             "layout": "vertical",
