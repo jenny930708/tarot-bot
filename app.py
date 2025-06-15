@@ -8,7 +8,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
-    FlexSendMessage, PostbackEvent
+    FlexSendMessage, PostbackEvent, ImageSendMessage
 )
 
 app = Flask(__name__)
@@ -18,6 +18,7 @@ handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 user_states = {}  # 儲存使用者狀態
 
 # 產生塔羅解讀文字
+
 def generate_tarot_reply(user_question, topic="一般"):
     cards = draw_tarot_cards(num=3)
     descriptions = [
@@ -35,7 +36,8 @@ def generate_tarot_reply(user_question, topic="一般"):
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content
+    image_urls = [card.get('image_url') for card in cards if card.get('image_url')]
+    return response.choices[0].message.content, image_urls
 
 # 判斷是否是情緒或聊天訊息
 def is_emotional_message(text):
@@ -82,8 +84,10 @@ def handle_message(event):
     if user_id in user_states and "topic" in user_states[user_id]:
         topic = user_states[user_id].pop("topic")
         user_question = event.message.text
-        reply_text = generate_tarot_reply(user_question, topic)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        reply_text, image_urls = generate_tarot_reply(user_question, topic)
+        messages = [ImageSendMessage(original_content_url=url, preview_image_url=url) for url in image_urls]
+        messages.append(TextSendMessage(text=reply_text))
+        line_bot_api.reply_message(event.reply_token, messages)
         return
 
     # 每日運勢觸發
