@@ -18,15 +18,14 @@ line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 user_states = {}  # 儲存使用者狀態
 
-# 產生塔羅解讀文字
-
+# 產生塔羅解讀文字（繁體中文）
 def generate_tarot_reply(user_question, topic="一般"):
     cards = draw_tarot_cards(num=3)
     descriptions = [
         f"{idx+1}. {card['name']}（{card['position']}）：{card[card['position']]}"
         for idx, card in enumerate(cards)
     ]
-    prompt = f"""你是一位溫柔神秘的塔羅占卜師。
+    prompt = f"""你是一位溫柔神秘的塔羅占卜師，請用繁體中文回應。
 使用者問：「{user_question}」（主題：{topic}）
 你抽到了以下三張塔羅牌：
 {chr(10).join(descriptions)}
@@ -76,7 +75,6 @@ def send_flex_menu(event):
     line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="請選擇塔羅占卜主題", contents=flex_content))
 
 # 背景線程延遲處理塔羅占卜
-
 def delayed_tarot(user_id, user_question, topic):
     reply_text, image_urls = generate_tarot_reply(user_question, topic)
     messages = [ImageSendMessage(original_content_url=url, preview_image_url=url) for url in image_urls]
@@ -87,7 +85,7 @@ def delayed_tarot(user_id, user_question, topic):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
-    text = event.message.text.strip().lower()
+    text = event.message.text.strip()
 
     # 如果使用者先前選擇了主題，現在輸入的是問題內容
     if user_id in user_states and "topic" in user_states[user_id]:
@@ -99,7 +97,7 @@ def handle_message(event):
 
     # 每日運勢觸發
     if "每日運勢" in text or "今日運勢" in text:
-        horoscope_prompt = "請給我今日的幸運運勢建議，請以溫暖語氣，內容精簡溫馨即可。"
+        horoscope_prompt = "請給我今日的幸運運勢建議，請用繁體中文，語氣溫暖，內容精簡溫馨。"
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": horoscope_prompt}]
@@ -124,10 +122,11 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🌴 歡迎來到塔羅占卜 AI！輸入「抽卡」或「占卜」來開始抽牌喔～"))
         return
 
-    # 一般聊天回應
+    # 一般聊天回應（繁體中文）
+    prompt = f"請用繁體中文友善回答以下訊息：{text}"
     reply = client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": text}]
+        messages=[{"role": "user", "content": prompt}]
     )
     reply_text = reply.choices[0].message.content
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
