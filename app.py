@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import threading
 from flask import Flask, request, abort
 from tarot import draw_tarot_cards
 from openai import OpenAI
@@ -74,6 +75,14 @@ def send_flex_menu(event):
     }
     line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="請選擇塔羅占卜主題", contents=flex_content))
 
+# 背景線程延遲處理塔羅占卜
+
+def delayed_tarot(user_id, user_question, topic):
+    reply_text, image_urls = generate_tarot_reply(user_question, topic)
+    messages = [ImageSendMessage(original_content_url=url, preview_image_url=url) for url in image_urls]
+    messages.append(TextSendMessage(text=reply_text))
+    line_bot_api.push_message(user_id, messages)
+
 # 文字訊息事件處理
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -84,10 +93,8 @@ def handle_message(event):
     if user_id in user_states and "topic" in user_states[user_id]:
         topic = user_states[user_id].pop("topic")
         user_question = event.message.text
-        reply_text, image_urls = generate_tarot_reply(user_question, topic)
-        messages = [ImageSendMessage(original_content_url=url, preview_image_url=url) for url in image_urls]
-        messages.append(TextSendMessage(text=reply_text))
-        line_bot_api.reply_message(event.reply_token, messages)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="🔮 占卜師正在洗牌並抽牌中..."))
+        threading.Thread(target=delayed_tarot, args=(user_id, user_question, topic)).start()
         return
 
     # 每日運勢觸發
